@@ -23,7 +23,7 @@ The system consists of the following main components:
     - Not part of this implementation (integration only)
 
 ## Communication Flow
-![Process](process.png)
+![Process](images/process.png)
 
 
 ## Technologies
@@ -33,7 +33,7 @@ The system consists of the following main components:
 
 ## Data Model
 
-![DB model](db-model.png)
+![DB model](images/db-model.png)
 
 ## MCP Interface
 
