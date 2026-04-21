@@ -1,0 +1,100 @@
+{
+  "tools": [
+    {
+      "name": "get_occurrences",
+      "description": "Returns occurrences of a specific object within a time range and variant filter. Use when you need to find where/when an object appears.",
+      "endpoint": "/tools/get_occurrences",
+      "method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "description": "Name of the object to search for."
+          },
+          "variant": {
+            "type": "string",
+            "description": "Variant filter for the object."
+          },
+          "from": {
+            "type": "string",
+            "description": "Start date/time of the range (ISO format recommended)."
+          },
+          "to": {
+            "type": "string",
+            "description": "End date/time of the range (ISO format recommended)."
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "description": "List of occurrences and their metadata."
+      },
+      "tags": ["analytics", "search", "occurrences"]
+    },
+    {
+      "name": "get_count",
+      "description": "Returns total count of occurrences for a given object, variant and time range. Use when you only need aggregated counts.",
+      "endpoint": "/tools/get_count",
+      "method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "description": "Name of the object to count."
+          },
+          "variant": {
+            "type": "string",
+            "description": "Variant filter for the object."
+          },
+          "from": {
+            "type": "string",
+            "description": "Start date/time of the range (ISO format recommended)."
+          },
+          "to": {
+            "type": "string",
+            "description": "End date/time of the range (ISO format recommended)."
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "description": "Contains total count value and list of occurrencies."
+      },
+      "tags": ["analytics", "aggregation", "count"]
+    },
+    {
+      "name": "get_most_frequent",
+      "description": "Returns the most frequently occurring objects in a given time range. Use when ranking or top-N analysis is needed.",
+      "endpoint": "/tools/get_most_frequent",
+      "method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "description": "Name of the object to count."
+          },
+          "variant": {
+            "type": "string",
+            "description": "Variant filter for the object."
+          },
+          "from": {
+            "type": "string",
+            "description": "Start date/time of the range (ISO format recommended)."
+          },
+          "to": {
+            "type": "string",
+            "description": "End date/time of the range (ISO format recommended)."
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "description": "List of most frequent objects with counts."
+      },
+      "tags": ["analytics", "ranking", "frequency"]
+    }
+  ]
+}
