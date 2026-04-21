@@ -13,13 +13,6 @@ public class VisualRecognitionDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        /*
-        modelBuilder.Entity<ObjectEntity>().
-            .ToTable("Objects");
-
-        modelBuilder.Entity<Occurrence>()
-            .ToTable("Occurrences");
-        */
         modelBuilder.Entity<Occurrence>()
             .HasOne(o => o.Object)
             .WithMany(o => o.Occurrences)
