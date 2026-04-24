@@ -1,81 +1,70 @@
-from flask import Flask, request, jsonify
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp import types
+import httpx
+import asyncio
 import json
-import requests
+import logging
+import sys
 
-app = Flask(__name__)
-
-with open("./MCP/tools.json", "r") as f:
-    TOOLS = json.load(f)["tools"]
+app = Server("recognition-mcp")
 
 WEB_API = "http://localhost:5299/recognition"
 
-@app.route("/mcp/call", methods=["POST"])
-def mcp_call():
-    data = request.json
+with open("<complete-path>\\MCP\\tools.json", "r") as f:
+    TOOLS = json.load(f)["tools"]
 
-    tool_name = data.get("tool")
-    params = data.get("params", {})
-
-    tool = next((t for t in TOOLS if t["name"] == tool_name), None)
-
-    if not tool:
-        return jsonify({"error": "Unknown tool."}), 400
-
-    response = requests.post(f"http://localhost:8000{tool['endpoint']}", json=params)
-
-    return jsonify(response.json())
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stderr,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
-@app.route("/tools/get_occurrences", methods=["POST"])
-def get_occurrences():
-    data = request.json
+@app.list_tools()
+async def list_tools() -> list[types.Tool]:
+    tools = []
+    for tool in TOOLS:
+        tools.append(
+            types.Tool(
+                name=tool["name"],
+                description=tool["description"],
+                inputSchema=tool["inputSchema"]
+            )
+        )
+    return tools
 
-    response = requests.get(
-        f"{WEB_API}/occurrences",
-        params={
-            "objectName": data.get("objectName"),
-            "variant": data.get("variant"),
-            "from": data.get("from"),
-            "to": data.get("to")
-        },
-        verify=False
-    )
 
-    return jsonify(response.json())
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    async with httpx.AsyncClient(verify=False) as client:
+        endpoint_map = {
+            "get_occurrences": "/occurrences",
+            "get_count": "/stats/count",
+            "get_most_frequent": "/stats/most-frequent"
+        }
+        
+        if name not in endpoint_map:
+            raise ValueError(f"Neznámý nástroj: {name}")
+        
 
-@app.route("/tools/get_count", methods=["POST"])
-def get_count():
-    data = request.json
+        logger.info(f"URL: {WEB_API}{endpoint_map[name]}")
+        logger.info(f"ARGUMENTS: {str(arguments)}")
 
-    response = requests.get(
-        f"{WEB_API}/stats/count",
-        params={
-            "objectName": data.get("objectName"),
-            "variant": data.get("variant"),
-            "from": data.get("from"),
-            "to": data.get("to")
-        },
-        verify=False
-    )
-    print(response)
-    return jsonify(response.json())
+        response = await client.get(
+            f"{WEB_API}{endpoint_map[name]}",
+            params=arguments
+        )
+        
+        logger.info(f"RESPONSE STATUS: {str(response.status_code)}")
+        logger.info(f"RESPONSE TEXT: {str(response.text)}")
+        
+        return [types.TextContent(type="text", text=str(response.json()))]
 
-@app.route("/tools/get_most_frequent", methods=["POST"])
-def get_most_frequent():
-    data = request.json
-
-    response = requests.get(
-        f"{WEB_API}/stats/most-frequent",
-        params={
-            "objectName": data.get("objectName"),
-            "variant": data.get("variant"),
-            "from": data.get("from"),
-            "to": data.get("to")
-        },
-        verify=False
-    )
-
-    return jsonify(response.json())
+async def main():
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 if __name__ == "__main__":
-    app.run(port=8000, debug=True)
+    asyncio.run(main())
