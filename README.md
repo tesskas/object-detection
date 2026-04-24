@@ -45,9 +45,15 @@ The system consists of the following main components:
 
 1. Run SQL script for creating database and tables with demo data.
 2. Run .NET API (`dotnet run --project BE/WebAPI/WebAPI/WebAPI.csproj`)
-3. Run Python MCP server (`python MCP/main.py`)
-4. Run mock console app (`python mock_console.py`)
-5. Put the question in Czech:
+3. Set MCP server (`MCP\main.py`)
+
+    - download Claude desktop app
+    - set absolute path for `tools.json` in `MCP\main.py`
+    - set MCP server in _Settings -> Developer_
+    - restart app
+
+4. Open Claude and start a new chat. Make sure that the recognition MCP server is running.
+5. Put the questions:
     - _Kolikrát jsi viděl hrnek včera?_
     - _Který objekt se za poslední týden opakvoval nejčastější?_
     - _Co jsi viděl v pondělí?_
