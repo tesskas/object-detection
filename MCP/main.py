@@ -1,70 +1,44 @@
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp import types
+from typing import Any
 import httpx
-import asyncio
-import json
-import logging
-import sys
+from fastmcp import FastMCP
 
-app = Server("recognition-mcp")
+mcp = FastMCP("recognition-mcp")
 
-WEB_API = "http://localhost:5299/recognition"
+WEB_API = "https://netapi<>.azurewebsites.net/recognition"
 
-with open("<complete-path>\\MCP\\tools.json", "r") as f:
-    TOOLS = json.load(f)["tools"]
+async def get_occurrences(objectName: str| None = None, variant: str| None = None, from_datetime: str | None = None, to_datetime: str | None = None)-> list[dict[str, Any]]:
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{WEB_API}/occurrences", params={
+            "objectName": objectName,
+            "variant": variant,
+            "from": from_datetime,
+            "to": to_datetime
+        })
+        return r.json()
 
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stderr,
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
-logger = logging.getLogger(__name__)
+async def get_count(objectName: str| None = None, variant: str| None = None, from_datetime: str| None = None, to_datetime: str| None = None)-> dict[str, Any]:
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{WEB_API}/stats/count", params={
+            "objectName": objectName,
+            "variant": variant,
+            "from": from_datetime,
+            "to": to_datetime
+        })
+        return r.json()
 
+async def get_most_frequent(objectName: str| None = None, variant: str| None = None, from_datetime: str| None = None, to_datetime: str| None = None)-> list[dict[str, Any]]:
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"{WEB_API}/stats/most-frequent", params={
+            "objectName": objectName,
+            "variant": variant,
+            "from": from_datetime,
+            "to": to_datetime
+        })
+        return r.json()
 
-@app.list_tools()
-async def list_tools() -> list[types.Tool]:
-    tools = []
-    for tool in TOOLS:
-        tools.append(
-            types.Tool(
-                name=tool["name"],
-                description=tool["description"],
-                inputSchema=tool["inputSchema"]
-            )
-        )
-    return tools
-
-
-@app.call_tool()
-async def call_tool(name: str, arguments: dict):
-    async with httpx.AsyncClient(verify=False) as client:
-        endpoint_map = {
-            "get_occurrences": "/occurrences",
-            "get_count": "/stats/count",
-            "get_most_frequent": "/stats/most-frequent"
-        }
-        
-        if name not in endpoint_map:
-            raise ValueError(f"Neznámý nástroj: {name}")
-        
-
-        logger.info(f"URL: {WEB_API}{endpoint_map[name]}")
-        logger.info(f"ARGUMENTS: {str(arguments)}")
-
-        response = await client.get(
-            f"{WEB_API}{endpoint_map[name]}",
-            params=arguments
-        )
-        
-        logger.info(f"RESPONSE STATUS: {str(response.status_code)}")
-        logger.info(f"RESPONSE TEXT: {str(response.text)}")
-        
-        return [types.TextContent(type="text", text=str(response.json()))]
-
-async def main():
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(read_stream, write_stream, app.create_initialization_options())
+mcp.add_tool(get_occurrences)
+mcp.add_tool(get_count)
+mcp.add_tool(get_most_frequent)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run(transport="http", host="0.0.0.0", port=8000)
